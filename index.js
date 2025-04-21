@@ -6,6 +6,7 @@ const { compareTwoStrings } = require("string-similarity");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Assuming AnimeKai is a function, not a class
 const kaianime = new ANIME.AnimeKai();
 
 // Function to map AniList title to KaiAnime ID
@@ -72,5 +73,7 @@ app.get("/api/map/:anilistId", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-    
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
