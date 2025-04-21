@@ -1,3 +1,3 @@
 ## Anilist to anime-kai
  
-this project allows you to get anime id for specific anime on animekai.to using Anilist I'd 
+this project allows you to get anime id for specific anime on animekai.to using Anilist id 
