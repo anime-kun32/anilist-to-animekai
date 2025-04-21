@@ -10,7 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-   "@consumet/extensions": "github:consumet/consumet.ts",
+    "@consumet/extensions": "github:consumet/consumet.ts",
     "axios": "^1.8.4",
     "express": "^5.1.0",
     "string-similarity": "^4.0.4"
