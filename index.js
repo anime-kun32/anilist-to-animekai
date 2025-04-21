@@ -1,84 +1,84 @@
-
 const express = require('express');
+const axios = require('axios');
 const { ANIME } = require('@consumet/extensions');
 const { compareTwoStrings } = require('string-similarity');
 
-// Create Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Function to get the best match from the AnimeKai API
+// Instantiate AnimeKai
+const animeProvider = new ANIME.AnimeKai();
+
+// Function to search and map the AniList title to AnimeKai
 async function getMappings(title) {
-  if (!title) return null;
-  if (!title?.english || !title?.romaji) return null;
+  if (!title || !title.english || !title.romaji) return null;
 
   try {
-    // Search for the anime using both English and Romaji titles
-    const eng = await ANIME.AnimeKai.search(title?.english);
-    const rom = await ANIME.AnimeKai.search(title?.romaji);
+    const eng = await animeProvider.search(title.english);
+    const rom = await animeProvider.search(title.romaji);
 
-    const english_search = eng?.results || [];
-    const romaji_search = rom?.results || [];
+    const combined = [...(eng?.results || []), ...(rom?.results || [])];
 
-    // Combine the results from both searches and remove duplicates
-    const combined = [...english_search, ...romaji_search];
     const uniqueResults = Array.from(new Set(combined.map(item => JSON.stringify(item))))
       .map(item => JSON.parse(item));
 
     let highestComp = 0;
-    let similarity_id = "";
+    let similarity_id = '';
 
-    // Compare each result and pick the best match
     uniqueResults.forEach((obj) => {
-      const id = obj.id;
-      const ob_title = obj.title;
-      const ob_japaneseTitle = obj.japaneseTitle;
+      const eng_comp = compareTwoStrings(title.english, obj.title || '');
+      const rom_comp = compareTwoStrings(title.romaji, obj.japaneseTitle || '');
+      const score = Math.max(eng_comp, rom_comp);
 
-      const eng_comparison = compareTwoStrings(title?.english, ob_title);
-      const jp_comparison = compareTwoStrings(title?.romaji, ob_japaneseTitle);
-
-      const greatest_title = Math.max(eng_comparison, jp_comparison);
-
-      if (highestComp < greatest_title) {
-        highestComp = greatest_title;
-        similarity_id = id;
+      if (score > highestComp) {
+        highestComp = score;
+        similarity_id = obj.id;
       }
     });
 
     return similarity_id;
-  } catch (error) {
-    console.error("Error while searching anime:", error);
+  } catch (err) {
+    console.error('Error while searching anime:', err);
     return null;
   }
 }
 
-// API endpoint to map AniList title to AnimeKai ID
+// API route that maps AniList ID to AnimeKai ID
 app.get('/api/map/:anilistId', async (req, res) => {
   const { anilistId } = req.params;
 
-  try {
-    // For simplicity, use a mock call to get the AniList title based on `anilistId`
-    // You could replace this with an actual call to AniList's API if you prefer
-    const title = {
-      english: 'Sonic X',  // Mocked English title
-      romaji: 'ソニックX',  // Mocked Romaji title
-    };
-
-    // Call the getMappings function with the title
-    const kaiResult = await getMappings(title);
-
-    if (kaiResult) {
-      res.json({ kaiResult });
-    } else {
-      res.status(404).json({ error: 'No match found on KaiAnime.' });
+  const query = `
+    query ($id: Int) {
+      Media(id: $id, type: ANIME) {
+        title {
+          romaji
+          english
+        }
+      }
     }
-  } catch (error) {
-    console.error("Error processing request:", error);
-    res.status(500).json({ error: 'Something went wrong.' });
+  `;
+
+  try {
+    const response = await axios.post('https://graphql.anilist.co', {
+      query,
+      variables: { id: Number(anilistId) },
+    });
+
+    const title = response.data.data.Media.title;
+
+    const kaiId = await getMappings(title);
+
+    if (kaiId) {
+      res.json({ kaiId });
+    } else {
+      res.status(404).json({ error: 'No match found on AnimeKai.' });
+    }
+  } catch (err) {
+    console.error('AniList query failed:', err.message);
+    res.status(500).json({ error: 'Failed to fetch from AniList or map result.' });
   }
 });
 
-// Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
