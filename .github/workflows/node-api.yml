@@ -7,6 +7,9 @@ on:
       - '**/index.js'
       - '.github/workflows/node-api.yml'
 
+permissions:
+  contents: write  # Grant write permissions to the repository contents
+
 jobs:
   install-and-commit:
     runs-on: ubuntu-latest
