@@ -1,33 +1,40 @@
-name: Node.js API CI
+name: Generate & Commit Node.js Dependencies
 
 on:
+  workflow_dispatch:  # Trigger manually
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    paths:
+      - '**/index.js'
+      - '.github/workflows/node-api.yml'
 
 jobs:
-  build:
+  install-and-commit:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
+      - name: Initialize npm (if needed)
+        run: |
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+
       - name: Install dependencies
-        run: npm install
+        run: npm install express axios @consumet/extensions string-similarity
 
-      - name: List installed files
-        run: ls -la
-
-      - name: Check package-lock.json
-        run: cat package-lock.json
-
-      # Optional: Run server (if script is defined)
-      # - name: Start API server (optional)
-      #   run: npm start
+      - name: Commit package.json and package-lock.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: add package.json and lockfile" || echo "Nothing to commit"
+          git push
