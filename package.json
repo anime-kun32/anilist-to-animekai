@@ -13,6 +13,7 @@
     "@consumet/extensions": "github:consumet/consumet.ts",
     "axios": "^1.8.4",
     "express": "^5.1.0",
-    "string-similarity": "^4.0.4"
+    "string-similarity": "^4.0.4",
+    "cors": "^2.8.5"
   }
 }
