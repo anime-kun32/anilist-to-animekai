@@ -6,10 +6,8 @@ const { compareTwoStrings } = require('string-similarity');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Instantiate AnimeKai
 const animeProvider = new ANIME.AnimeKai();
 
-// Function to search and map the AniList title to AnimeKai
 async function getMappings(title) {
   if (!title || !title.english || !title.romaji) return null;
 
@@ -38,12 +36,14 @@ async function getMappings(title) {
 
     return similarity_id;
   } catch (err) {
-    console.error('Error while searching anime:', err);
     return null;
   }
 }
 
-// API route that maps AniList ID to AnimeKai ID
+app.get('/', (req, res) => {
+  res.send('Welcome to the AniList → AnimeKai Mapper. Use /api/map/:anilistId to get the corresponding AnimeKai ID.');
+});
+
 app.get('/api/map/:anilistId', async (req, res) => {
   const { anilistId } = req.params;
 
@@ -74,7 +74,6 @@ app.get('/api/map/:anilistId', async (req, res) => {
       res.status(404).json({ error: 'No match found on AnimeKai.' });
     }
   } catch (err) {
-    console.error('AniList query failed:', err.message);
     res.status(500).json({ error: 'Failed to fetch from AniList or map result.' });
   }
 });
